@@ -35,8 +35,7 @@ const decryptWebhook = async () => {
     });
 };
 
-const buildPostRequests = (logEvents, webhook) =>
-{   
+const buildPostRequests = (logEvents, webhook) => {   
     return logEvents.reduce((result, event) =>  {
         const postData = event.message; //buildSlackMessage(event.message);
         result.push( () => {
@@ -47,38 +46,38 @@ const buildPostRequests = (logEvents, webhook) =>
 }
 
 
-const buildSlackMessages = (logEvents) => {
-    return logEvents.reduce((result, event) =>
+const buildSlackMessage = (logEvents) => {
+    const attachments = buildAttachments(logEvents);
+    return {
+        channel: env.channel,
+        username: env.userName,
+        icon_emoji: null,
+        icon_url: null,
+        attachments
+  }
+}
+
+const buildAttachments = (logEvents) => {
+  return logEvents.reduce((result, event) =>
     {
-        result.push(buildSlackMessage(event.message));
+        const logEventMessage = event.message;
+        const messageObject = env.parseLogEvent != null && env.parseLogEvent.toLowerCase() == 'true' ? parseLogEventMessage(logEventMessage) : { text: logEventMessage} ;
+        const attachment = {
+            fallback: env.eventType,
+            title: env.eventType,
+            text: messageObject.text, 
+            color: null,
+            fields: messageObject.fieldProperties
+          }
+          
+        result.push(attachment);
+        
         return result;
         
     },[]);
-}
-
-const buildSlackMessage = (logEventMessage) => {
-  
-  const messageObject = env.parseLogEvent != null && env.parseLogEvent.toLowerCase() == 'true' ? parseLogEventMessage(logEventMessage) : { text: logEventMessage} ;
-  
-  return {
-    channel: env.channel,
-    username: env.userName,
-    icon_emoji: null,
-    icon_url: null,
-    attachments: [
-      {
-        fallback: env.eventType,
-        title: env.eventType,
-        text: messageObject.text, 
-        color: null,
-        fields: messageObject.fieldProperties
-      }
-    ]
-  }
 };
 
 const parseLogEventMessage = (message) => {
-    
   let messageObject = {
       text: message,
       fieldProperties: null
@@ -140,16 +139,13 @@ const post = async (requestUrl, data) => {
     });
 }
 
-
 exports.handler = async (event) => {
     const logData = new Buffer.from(event.awslogs.data, 'base64');
     
     const webhook = await decryptWebhook();
     const logEvents = await unzipLogData(logData);
-    const slackMessages = buildSlackMessages(logEvents);
+    const slackMessage = buildSlackMessage(logEvents);
     
-    for(const slackMsg of slackMessages) {
-        const res = await post(webhook, slackMsg);
-        console.log('post respose: ' + JSON.stringify(res));
-    }
+    const res = await post(webhook, slackMessage);
+    console.log('post respose: ' + JSON.stringify(res));
 };
