@@ -32,7 +32,7 @@ Set the following optional environment variables for the Lambda function:
 | ---------- | ------------------------------------------- |
 | channel    | Slack channel to send the notifications to. |
 | eventType  | The type of event (i.e. Application Log, Strategy Execution Log, etc.) |
-| parseLogEvent  | Set to *true* if the log event is a JSON object which you want to be parsed to create a formatted Slack message.  Else set to *false*.  |
+| parseLogEvent  | Set to **true** if the log event is expected to be a JSON object which you want to be parsed to create a formatted Slack message. Set to **false** for the log event to be sent to Slack without any formatting.  |
 | username   | Bot username used for the slack messages.   |
 
 ### Trigger configuration
