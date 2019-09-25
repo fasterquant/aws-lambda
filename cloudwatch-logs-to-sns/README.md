@@ -1,4 +1,4 @@
-# cloudwatch-logs-to-slack
+# cloudwatch-logs-to-sns
 
 An [AWS Lambda](https://aws.amazon.com/lambda/) function for publishing [Amazon CloudWatch](https://aws.amazon.com/cloudwatch/) log events to
 [SNS](https://aws.amazon.com/sns/).

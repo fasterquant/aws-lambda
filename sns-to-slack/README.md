@@ -1,4 +1,4 @@
-# cloudwatch-logs-to-slack
+# sns-to-slack
 
 An [AWS Lambda](https://aws.amazon.com/lambda/) function for posting SNS messages to
 [Slack](https://slack.com/).
