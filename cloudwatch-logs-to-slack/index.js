@@ -1,11 +1,11 @@
 'use strict'
-
-const aws = require('aws-sdk');
-const https = require('https');
-const zlib = require('zlib');
-const url = require('url');
+import { KMSClient, DecryptCommand } from "@aws-sdk/client-kms"; // ES Modules import
+import https from 'https';
+import zlib from 'zlib';
+import url from 'url';
 
 const env = process.env;
+const client = new KMSClient({region: 'us-east-1'});
 
 const unzipLogData = async (logData) => {
    return new Promise((resolve, reject) => {
@@ -24,15 +24,18 @@ const unzipLogData = async (logData) => {
 };
 
 const decryptWebhook = async () => {
-    return new Promise((resolve, reject) => {
-        console.log('Decrypt ' + env.webhook);
-        const kms = new aws.KMS();
-        const enc = { CiphertextBlob: Buffer.from(env.webhook, 'base64') };
-        kms.decrypt(enc, (err, data) => {
-            if (err) return reject(err);
-            resolve(data.Plaintext.toString('ascii'));
-        });
-    });
+    console.log('Decrypt ' + env.webhook);
+    
+    const req = {
+        CiphertextBlob: Buffer.from(env.webhook, 'base64'),
+        EncryptionContext: { LambdaFunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME },
+      };
+      
+    const command = new DecryptCommand(req);
+    const response = await client.send(command);
+    const decrypted = new TextDecoder().decode(response.Plaintext);
+
+    return decrypted;
 };
 
 const buildPostRequests = (logEvents, webhook) => {   
@@ -139,10 +142,11 @@ const post = async (requestUrl, data) => {
     });
 }
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     const logData = new Buffer.from(event.awslogs.data, 'base64');
     
     const webhook = await decryptWebhook();
+    console.log('webhook: ' + webhook);
     const logEvents = await unzipLogData(logData);
     const slackMessage = buildSlackMessage(logEvents);
     
